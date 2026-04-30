@@ -1,0 +1,103 @@
+name: 'SaveINurRePo'
+
+
+on:
+  workflow_dispatch: 
+    inputs:
+      file_url: 
+        description: 'DireCt LinK PleaSe!'
+        required: true
+        type: string
+      password:
+        description: 'EnTeR CusToM Pass for CompressFile Or Nothing'
+        required: false
+        type: string
+        default: ''
+      split_size:
+        description: 'SiZe of eaCh PART (per MB)'
+        required: false
+        type: string
+        default: '51m'
+     
+
+
+permissions:
+  contents: write  #IMP ALLOW TO REPOWRITE
+
+  
+jobs:
+  download-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ReCieVe RePo CoDe
+        uses: actions/checkout@v4
+
+      - name: InsTaLL TooLs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full file
+
+      - name: FiLe DowNLoaD
+        id: download
+        run: |
+          URL="${{ github.event.inputs.file_url }}"
+          echo " DownLoaDing FRoM: $URL By #UnKnOwN"
+          curl -L --fail --retry 5 --retry-delay 5 --progress-bar -o downloaded_file "$URL"
+          if [ $? -ne 0 ]; then exit 1; fi
+          ls -lh downloaded_file
+
+      - name: DeTecT TyPe And ExtraCTioN OrGinaL NAME
+        id: classify
+        run: |
+          # OrGinaL Name FroM LINK
+          RAW_NAME=$(basename "${{ github.event.inputs.file_url }}" | sed 's/\?.*//' | sed 's/%20/ /g')
+          if [ -z "$RAW_NAME" ]; then RAW_NAME="unknown_file"; fi
+          ReMOVe NOTACCesableName For Folder(REP BY _)
+          SAFE_NAME=$(echo "$RAW_NAME" | sed 's/[\\/:*?"<>|]/_/g')
+          # DeTect MIME
+          MIME=$(file -b --mime-type downloaded_file)
+          EXT="${RAW_NAME##*.}"
+          EXT=$(echo "$EXT" | tr '[:upper:]' '[:lower:]')
+          
+          if [[ "$MIME" == video/* ]] || [[ "$EXT" =~ ^(mp4|mkv|avi|mov|wmv|flv|webm)$ ]]; then
+            CAT="video"
+          elif [[ "$MIME" == audio/* ]] || [[ "$EXT" =~ ^(mp3|wav|ogg|flac|m4a)$ ]]; then
+            CAT="audio"
+          elif [[ "$MIME" == image/* ]] || [[ "$EXT" =~ ^(jpg|jpeg|png|gif|bmp|webp)$ ]]; then
+            CAT="image"
+          elif [[ "$MIME" == application/pdf ]] || [[ "$EXT" =~ ^(pdf|doc|docx|xls|xlsx|ppt|pptx|txt)$ ]]; then
+            CAT="document"
+          else
+            CAT="other"
+          fi
+          
+          echo "CAT=$CAT" >> $GITHUB_ENV
+          echo "SAFE_NAME=$SAFE_NAME" >> $GITHUB_ENV
+          echo ": $CAT → : $SAFE_NAME"
+
+      - name: ComPress and PRoTecT
+        run: |
+          
+          FINAL_DIR="downloads/${{ env.CAT }}/${{ env.SAFE_NAME }}"
+          mkdir -p "$FINAL_DIR"
+          
+          # ReMoveLAstFILEs
+          rm -f "$FINAL_DIR"/*.7z*
+          
+          # ComPressinG
+          if [ -z "${{ github.event.inputs.password }}" ]; then
+            7z a -mhe=on -mx=3 -v${{ github.event.inputs.split_size }} "$FINAL_DIR/archive.7z" "./downloaded_file"
+          else
+            7z a -p"${{ github.event.inputs.password }}" -mhe=on -mx=3 -v${{ github.event.inputs.split_size }} "$FINAL_DIR/archive.7z" "./downloaded_file"
+          fi
+          
+          echo "FiLe SaVe at $FINAL_DIR By #UnKnOwN"
+          ls -lh "$FINAL_DIR"
+
+      - name: CommitANDpushTOrepo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add downloads/
+          git commit -m "Add downloaded file: ${{ env.SAFE_NAME }} (category: ${{ env.CAT }})" || echo "Nothing to commit"
+          git push
