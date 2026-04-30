@@ -1,60 +1,56 @@
-name: 'SaveINurRePo'
-
+name: 'dUnKloader& SaVe in RePo'
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
     inputs:
-      file_url: 
-        description: 'DireCt LinK PleaSe!'
+      file_url:
+        description: 'DiReCt LiNK'
         required: true
         type: string
       password:
-        description: 'EnTeR CusToM Pass for CompressFile Or Nothing'
+        description: 'CusTom PassWoRd 4ZipFile'
         required: false
         type: string
         default: ''
       split_size:
-        description: 'SiZe of eaCh PART (per MB)'
+        description: 'SiZe of EacH PaRT pEr MB Ex: 52m'
         required: false
         type: string
-        default: '51m'
-     
-
+        default: '52m'
 
 permissions:
-  contents: write  #IMP ALLOW TO REPOWRITE
+  contents: write  #ImP (Acces To The Repo)
 
-  
 jobs:
   download-and-commit:
     runs-on: ubuntu-latest
     steps:
-      - name: ReCieVe RePo CoDe
+      - name: ReciEvE Repo CodE By↔️#UnKnOwN↔️
         uses: actions/checkout@v4
 
-      - name: InsTaLL TooLs
+      - name: InsTaLL TooLs By↔️#UnKnOwN↔️
         run: |
           sudo apt-get update
           sudo apt-get install -y p7zip-full file
 
-      - name: FiLe DowNLoaD
+      - name: Files DowNLoadiNg By↔️#UnKnOwN↔️
         id: download
         run: |
           URL="${{ github.event.inputs.file_url }}"
-          echo " DownLoaDing FRoM: $URL By #UnKnOwN"
+          echo "DowNLoadiNg FRom : $URL"
           curl -L --fail --retry 5 --retry-delay 5 --progress-bar -o downloaded_file "$URL"
           if [ $? -ne 0 ]; then exit 1; fi
           ls -lh downloaded_file
 
-      - name: DeTecT TyPe And ExtraCTioN OrGinaL NAME
+      - name: NamE & TyPe DeTecT By↔️#UnKnOwN↔️
         id: classify
         run: |
-          # OrGinaL Name FroM LINK
+          # OrGiNaL NaMe By↔️#UnKnOwN↔️
           RAW_NAME=$(basename "${{ github.event.inputs.file_url }}" | sed 's/\?.*//' | sed 's/%20/ /g')
           if [ -z "$RAW_NAME" ]; then RAW_NAME="unknown_file"; fi
-          ReMOVe NOTACCesableName For Folder(REP BY _)
+          # RemoVe WronG ChaRacTers By↔️#UnKnOwN↔️
           SAFE_NAME=$(echo "$RAW_NAME" | sed 's/[\\/:*?"<>|]/_/g')
-          # DeTect MIME
+          # تشخیص MIME
           MIME=$(file -b --mime-type downloaded_file)
           EXT="${RAW_NAME##*.}"
           EXT=$(echo "$EXT" | tr '[:upper:]' '[:lower:]')
@@ -73,28 +69,28 @@ jobs:
           
           echo "CAT=$CAT" >> $GITHUB_ENV
           echo "SAFE_NAME=$SAFE_NAME" >> $GITHUB_ENV
-          echo ": $CAT → : $SAFE_NAME"
+          echo $SAFE_NAME"
 
-      - name: ComPress and PRoTecT
+      - name: ComPRessiNg & EnQrypTiNg By↔️#UnKnOwN↔️
         run: |
-          
-          FINAL_DIR="downloads/${{ env.CAT }}/${{ env.SAFE_NAME }}"
+          # FinalTarGet: HeRe/Name/GruoP 
+          FINAL_DIR="HeRe/${{ env.CAT }}/${{ env.SAFE_NAME }}"
           mkdir -p "$FINAL_DIR"
           
-          # ReMoveLAstFILEs
+          # DeleTe LasT FileS (:)
           rm -f "$FINAL_DIR"/*.7z*
           
-          # ComPressinG
+          # ComPRessiNg By↔️#UnKnOwN↔️
           if [ -z "${{ github.event.inputs.password }}" ]; then
             7z a -mhe=on -mx=3 -v${{ github.event.inputs.split_size }} "$FINAL_DIR/archive.7z" "./downloaded_file"
           else
             7z a -p"${{ github.event.inputs.password }}" -mhe=on -mx=3 -v${{ github.event.inputs.split_size }} "$FINAL_DIR/archive.7z" "./downloaded_file"
           fi
           
-          echo "FiLe SaVe at $FINAL_DIR By #UnKnOwN"
+          echo "✅ FiLe SaVe In $FINAL_DIR "
           ls -lh "$FINAL_DIR"
 
-      - name: CommitANDpushTOrepo
+      - name: Commit&PushIN Repo By↔️#UnKnOwN↔️
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
