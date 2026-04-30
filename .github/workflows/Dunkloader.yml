@@ -1,4 +1,4 @@
-name: 'dUnKloader& SaVe in RePo'
+name: 'UnKDownloader & SaVe in RePo'
 
 on:
   workflow_dispatch:
@@ -50,7 +50,7 @@ jobs:
           if [ -z "$RAW_NAME" ]; then RAW_NAME="unknown_file"; fi
           # RemoVe WronG ChaRacTers By↔️#UnKnOwN↔️
           SAFE_NAME=$(echo "$RAW_NAME" | sed 's/[\\/:*?"<>|]/_/g')
-          # تشخیص MIME
+          # MIME
           MIME=$(file -b --mime-type downloaded_file)
           EXT="${RAW_NAME##*.}"
           EXT=$(echo "$EXT" | tr '[:upper:]' '[:lower:]')
