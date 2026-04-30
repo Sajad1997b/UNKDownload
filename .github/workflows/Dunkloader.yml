@@ -1,56 +1,56 @@
-name: 'UnKDownloader & SaVe in RePo'
+name: '📦 حرفه‌ای: دانلود و ذخیره در مخزن'
 
 on:
   workflow_dispatch:
     inputs:
       file_url:
-        description: 'DiReCt LiNK'
+        description: '🔗 لینک مستقیم فایل'
         required: true
         type: string
       password:
-        description: 'CusTom PassWoRd 4ZipFile'
+        description: '🔐 رمز فایل فشرده (اختیاری)'
         required: false
         type: string
         default: ''
       split_size:
-        description: 'SiZe of EacH PaRT pEr MB Ex: 52m'
+        description: '📦 حجم هر تکه (پیش‌فرض: 95m) مثال: 95m, 100m, 200m'
         required: false
         type: string
-        default: '52m'
+        default: '95m'
 
 permissions:
-  contents: write  #ImP (Acces To The Repo)
+  contents: write  # مهم: اجازه پوش به مخزن
 
 jobs:
   download-and-commit:
     runs-on: ubuntu-latest
     steps:
-      - name: ReciEvE Repo CodE By↔️#UnKnOwN↔️
+      - name: 🔄 دریافت کد مخزن
         uses: actions/checkout@v4
 
-      - name: InsTaLL TooLs By↔️#UnKnOwN↔️
+      - name: ⚙️ نصب ابزارها
         run: |
           sudo apt-get update
           sudo apt-get install -y p7zip-full file
 
-      - name: Files DowNLoadiNg By↔️#UnKnOwN↔️
+      - name: 📥 دانلود فایل
         id: download
         run: |
           URL="${{ github.event.inputs.file_url }}"
-          echo "DowNLoadiNg FRom : $URL"
+          echo "در حال دانلود از: $URL"
           curl -L --fail --retry 5 --retry-delay 5 --progress-bar -o downloaded_file "$URL"
           if [ $? -ne 0 ]; then exit 1; fi
           ls -lh downloaded_file
 
-      - name: NamE & TyPe DeTecT By↔️#UnKnOwN↔️
+      - name: 🧠 تشخیص نوع و استخراج نام اصلی
         id: classify
         run: |
-          # OrGiNaL NaMe By↔️#UnKnOwN↔️
+          # نام اصلی از لینک
           RAW_NAME=$(basename "${{ github.event.inputs.file_url }}" | sed 's/\?.*//' | sed 's/%20/ /g')
           if [ -z "$RAW_NAME" ]; then RAW_NAME="unknown_file"; fi
-          # RemoVe WronG ChaRacTers By↔️#UnKnOwN↔️
+          # حذف کاراکترهای غیرمجاز برای نام پوشه (جایگزینی با _)
           SAFE_NAME=$(echo "$RAW_NAME" | sed 's/[\\/:*?"<>|]/_/g')
-          # MIME
+          # تشخیص MIME
           MIME=$(file -b --mime-type downloaded_file)
           EXT="${RAW_NAME##*.}"
           EXT=$(echo "$EXT" | tr '[:upper:]' '[:lower:]')
@@ -69,28 +69,28 @@ jobs:
           
           echo "CAT=$CAT" >> $GITHUB_ENV
           echo "SAFE_NAME=$SAFE_NAME" >> $GITHUB_ENV
-          echo $SAFE_NAME"
+          echo "✅ دسته: $CAT → زیرپوشه: $SAFE_NAME"
 
-      - name: ComPRessiNg & EnQrypTiNg By↔️#UnKnOwN↔️
+      - name: 🗜️ فشرده‌سازی و تقسیم (با اعمال رمز)
         run: |
-          # FinalTarGet: HeRe/Name/GruoP 
-          FINAL_DIR="HeRe/${{ env.CAT }}/${{ env.SAFE_NAME }}"
+          # پوشه نهایی: downloads/دسته/نام فایل/
+          FINAL_DIR="downloads/${{ env.CAT }}/${{ env.SAFE_NAME }}"
           mkdir -p "$FINAL_DIR"
           
-          # DeleTe LasT FileS (:)
+          # حذف فایل‌های قبلی در آن زیرپوشه (در صورت وجود) تا تداخل پیش نیاید
           rm -f "$FINAL_DIR"/*.7z*
           
-          # ComPRessiNg By↔️#UnKnOwN↔️
+          # فشرده‌سازی
           if [ -z "${{ github.event.inputs.password }}" ]; then
             7z a -mhe=on -mx=3 -v${{ github.event.inputs.split_size }} "$FINAL_DIR/archive.7z" "./downloaded_file"
           else
             7z a -p"${{ github.event.inputs.password }}" -mhe=on -mx=3 -v${{ github.event.inputs.split_size }} "$FINAL_DIR/archive.7z" "./downloaded_file"
           fi
           
-          echo "✅ FiLe SaVe In $FINAL_DIR "
+          echo "✅ فایل در $FINAL_DIR ذخیره شد"
           ls -lh "$FINAL_DIR"
 
-      - name: Commit&PushIN Repo By↔️#UnKnOwN↔️
+      - name: 📝 کامیت و پوش به مخزن
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
